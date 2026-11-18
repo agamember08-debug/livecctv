@@ -61,13 +61,54 @@
       </div>
 
       <div id="camera-settings" class="pt-1 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400 border-t border-zinc-800/80">
-        <span>Kualitas Stream (Hemat Baterai & Panas):</span>
+        <span>Kualitas Stream (Hemat Kuota & Baterai):</span>
         <select id="quality-select" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-200 focus:outline-none">
-          <option value="low">480p • 15 FPS (Sangat Hemat)</option>
+          <option value="low">480p • 15 FPS (Hemat Kuota 4G)</option>
           <option value="medium" selected>720p • 20 FPS (Seimbang)</option>
           <option value="high">1080p • 24 FPS (Tajam)</option>
         </select>
       </div>
+
+      <!-- Pengaturan TURN Server untuk Data Seluler 4G/5G -->
+      <details class="pt-2 border-t border-zinc-800/80 text-xs">
+        <summary class="cursor-pointer text-zinc-400 hover:text-zinc-200 font-medium select-none flex items-center justify-between">
+          <span>⚙️ Pengaturan Jaringan Seluler 4G/5G (TURN Server)</span>
+          <span id="turn-status-pill" class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 text-[11px]">Opsional</span>
+        </summary>
+        <div class="mt-3 space-y-2.5 bg-zinc-950/80 p-3 rounded-xl border border-zinc-800/80">
+          <p class="text-[11px] text-zinc-400 leading-relaxed">
+            Isi bagian ini jika HP Kamera memakai <strong>Data Seluler (4G/5G)</strong> dan Monitor memakai jaringan berbeda. Dapatkan kredensial gratis dari <strong>Metered.ca (Open Relay)</strong> atau <strong>Cloudflare Calls TURN</strong>.
+          </p>
+          <input
+            id="turn-url"
+            type="text"
+            placeholder="TURN URL (Contoh: turn:global.relay.metered.ca:80)"
+            class="w-full bg-zinc-900 border border-zinc-800 focus:border-emerald-500 focus:outline-none rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600"
+          />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input
+              id="turn-user"
+              type="text"
+              placeholder="Username TURN"
+              class="bg-zinc-900 border border-zinc-800 focus:border-emerald-500 focus:outline-none rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600"
+            />
+            <input
+              id="turn-pass"
+              type="password"
+              placeholder="Credential / Password TURN"
+              class="bg-zinc-900 border border-zinc-800 focus:border-emerald-500 focus:outline-none rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600"
+            />
+          </div>
+          <div class="flex justify-end gap-2 pt-1">
+            <button type="button" onclick="clearTurnConfig()" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px]">
+              Hapus
+            </button>
+            <button type="button" onclick="saveTurnConfig()" class="px-3 py-1.5 rounded-lg bg-emerald-600/80 hover:bg-emerald-600 text-white font-medium text-[11px]">
+              Simpan Pengaturan
+            </button>
+          </div>
+        </div>
+      </details>
     </section>
 
     <!-- Area Video & Kontrol -->
@@ -106,34 +147,28 @@
       <!-- Baris Tombol Kontrol -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
         <div class="flex flex-wrap items-center gap-2">
-          <!-- Senter -->
           <button id="btn-torch" onclick="handleTorch()" class="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
             <span>🔦</span> <span id="torch-label">Senter: Mati</span>
           </button>
 
-          <!-- Tukar Kamera -->
           <button id="btn-switch" onclick="handleSwitchCam()" class="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
             <span>🔄</span> <span>Tukar Kamera</span>
           </button>
 
-          <!-- Audio -->
           <button id="btn-audio" onclick="handleAudio()" class="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
             <span>🔇</span> <span id="audio-label">Suara: Mati</span>
           </button>
 
-          <!-- Layar Hitam (Khusus HP Kamera) -->
           <button id="btn-blackout" onclick="enableBlackout()" class="hidden px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-medium transition flex items-center gap-1.5">
             <span>🌙</span> <span>Layar Hitam</span>
           </button>
 
-          <!-- Fullscreen (Khusus Monitor) -->
           <button id="btn-fullscreen" onclick="toggleFullscreen()" class="hidden px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
             <span>⛶</span> <span>Layar Penuh</span>
           </button>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <!-- Matikan Aplikasi HP Jarak Jauh (Khusus Monitor) -->
           <button
             id="btn-remote-shutdown"
             onclick="handleRemoteShutdown()"
@@ -142,7 +177,6 @@
             <span>🛑</span> <span id="shutdown-label">Matikan Aplikasi HP</span>
           </button>
 
-          <!-- Putuskan Sesi Lokal -->
           <button onclick="stopSession()" class="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 text-xs font-semibold transition">
             Keluar
           </button>
@@ -167,14 +201,81 @@
 
   <script>
     const PEER_PREFIX = 'ofym-livecctv-';
-    const ICE_CONFIG = {
-      iceServers: [
+
+    function buildIceConfig() {
+      const iceServers = [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun.cloudflare.com:3478' }
-      ]
-    };
+      ];
+
+      const turnUrl = (localStorage.getItem('cctv_turn_url') || '').trim();
+      const turnUser = (localStorage.getItem('cctv_turn_user') || '').trim();
+      const turnPass = (localStorage.getItem('cctv_turn_pass') || '').trim();
+
+      if (turnUrl && turnUser && turnPass) {
+        iceServers.push({
+          urls: turnUrl,
+          username: turnUser,
+          credential: turnPass
+        });
+      }
+
+      return {
+        iceServers,
+        iceCandidatePoolSize: 10
+      };
+    }
+
+    function hasTurnConfigured() {
+      return Boolean(
+        localStorage.getItem('cctv_turn_url') &&
+        localStorage.getItem('cctv_turn_user') &&
+        localStorage.getItem('cctv_turn_pass')
+      );
+    }
+
+    function loadTurnInputs() {
+      document.getElementById('turn-url').value = localStorage.getItem('cctv_turn_url') || '';
+      document.getElementById('turn-user').value = localStorage.getItem('cctv_turn_user') || '';
+      document.getElementById('turn-pass').value = localStorage.getItem('cctv_turn_pass') || '';
+      updateTurnPill();
+    }
+
+    function saveTurnConfig() {
+      const url = document.getElementById('turn-url').value.trim();
+      const user = document.getElementById('turn-user').value.trim();
+      const pass = document.getElementById('turn-pass').value.trim();
+
+      if (!url || !user || !pass) {
+        showError('Lengkapi TURN URL, Username, dan Password terlebih dahulu.');
+        return;
+      }
+      clearError();
+      localStorage.setItem('cctv_turn_url', url);
+      localStorage.setItem('cctv_turn_user', user);
+      localStorage.setItem('cctv_turn_pass', pass);
+      updateTurnPill();
+    }
+
+    function clearTurnConfig() {
+      localStorage.removeItem('cctv_turn_url');
+      localStorage.removeItem('cctv_turn_user');
+      localStorage.removeItem('cctv_turn_pass');
+      loadTurnInputs();
+      clearError();
+    }
+
+    function updateTurnPill() {
+      const pill = document.getElementById('turn-status-pill');
+      if (hasTurnConfigured()) {
+        pill.textContent = 'TURN Aktif';
+        pill.className = 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px]';
+      } else {
+        pill.textContent = 'Belum Diisi';
+        pill.className = 'px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 text-[11px]';
+      }
+    }
 
     let currentMode = 'camera';
     let currentRoomCode = '';
@@ -192,7 +293,6 @@
     let wakeLock = null;
     let clockInterval = null;
 
-    // State konfirmasi tombol shutdown jarak jauh
     let shutdownConfirmPending = false;
     let shutdownConfirmTimeout = null;
 
@@ -203,6 +303,7 @@
 
     const savedRoom = localStorage.getItem('cctv_last_room');
     if (savedRoom) document.getElementById('room-input').value = savedRoom;
+    loadTurnInputs();
 
     function selectMode(mode) {
       if (peer) return;
@@ -296,7 +397,11 @@
         return;
       }
 
-      peer = new Peer(PEER_PREFIX + roomCode, { config: ICE_CONFIG });
+      // pingInterval: 5000 menjaga koneksi WebSocket tetap hidup pada jaringan data seluler 4G/5G
+      peer = new Peer(PEER_PREFIX + roomCode, {
+        config: buildIceConfig(),
+        pingInterval: 5000
+      });
 
       peer.on('open', () => {
         setStatus('Kamera Aktif', 'live');
@@ -349,20 +454,17 @@
     }
 
     function executeRemoteShutdown() {
-      // Beri tahu semua Monitor bahwa aplikasi HP sedang dimatikan
       dataConnections.forEach(conn => {
         if (conn && conn.open) {
           try { conn.send({ type: 'shutting-down' }); } catch (_) {}
         }
       });
 
-      // Hentikan kamera dan mikrofon seketika
       if (localStream) {
         localStream.getTracks().forEach(t => t.stop());
         localStream = null;
       }
 
-      // Beri jeda 350ms agar sinyal balasan terkirim ke Monitor sebelum aplikasi ditutup
       setTimeout(() => {
         if (window.AndroidBridge && typeof window.AndroidBridge.shutdownApp === 'function') {
           window.AndroidBridge.shutdownApp();
@@ -475,7 +577,10 @@
       document.getElementById('btn-remote-shutdown').classList.remove('hidden');
       document.getElementById('overlay-label').textContent = `MONITOR • ${roomCode}`;
 
-      peer = new Peer({ config: ICE_CONFIG });
+      peer = new Peer({
+        config: buildIceConfig(),
+        pingInterval: 5000
+      });
 
       peer.on('open', () => {
         connectToCamera(roomCode);
@@ -489,11 +594,10 @@
           call.peerConnection.oniceconnectionstatechange = () => {
             const state = call.peerConnection.iceConnectionState;
             if (state === 'failed' || state === 'disconnected') {
-              setPlaceholderText(
-                'Jalur video terblokir jaringan',
-                'Pastikan HP Kamera & Monitor memakai Wi-Fi yang sama.',
-                false
-              );
+              const hint = hasTurnConfigured()
+                ? 'Koneksi TURN/Seluler terputus. Tekan "Coba Sambung Ulang".'
+                : 'Operator seluler memblokir koneksi langsung. Isi pengaturan TURN Server di halaman awal.';
+              setPlaceholderText('Jalur video terblokir jaringan seluler', hint, false);
             }
           };
         }
@@ -518,7 +622,7 @@
         if (err.type === 'peer-unavailable') {
           setPlaceholderText(
             'HP Kamera tidak aktif',
-            `Aplikasi CCTV di HP belum dijalankan atau sudah dimatikan (Kode: "${roomCode}").`,
+            `Aplikasi CCTV di HP belum dijalankan atau sudah ditutup (Kode: "${roomCode}").`,
             false
           );
           setStatus('Kamera Offline', 'error');
@@ -562,7 +666,7 @@
           document.getElementById('video-placeholder').classList.remove('hidden');
           setPlaceholderText(
             'Aplikasi CCTV di HP telah dimatikan',
-            'Layanan kamera latar belakang di HP sudah berhenti sepenuhnya.',
+            'Layanan kamera di HP sudah berhenti sepenuhnya.',
             false
           );
         }
@@ -574,7 +678,7 @@
         clearInterval(retryTimer);
         setStatus('Kamera Terputus', 'error');
         document.getElementById('video-placeholder').classList.remove('hidden');
-        setPlaceholderText('Koneksi ke HP Kamera terputus', 'Aplikasi CCTV di HP dimatikan atau kehilangan sinyal.', false);
+        setPlaceholderText('Koneksi ke HP Kamera terputus', 'Aplikasi CCTV di HP ditutup atau kehilangan sinyal.', false);
       });
     }
 
