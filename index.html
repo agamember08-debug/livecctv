@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Live CCTV WebRTC</title>
+  <title>LiveCam CCTV</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
-    /* Mencegah pull-to-refresh di mobile saat mode kamera aktif */
     body { overscroll-behavior-y: contain; }
   </style>
 </head>
@@ -18,7 +17,7 @@
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-2.5">
         <span id="header-dot" class="w-2.5 h-2.5 rounded-full bg-zinc-600"></span>
-        <h1 class="font-semibold tracking-tight text-base">LiveCam P2P</h1>
+        <h1 class="font-semibold tracking-tight text-base">LiveCam CCTV</h1>
       </div>
       <span id="status-badge" class="text-xs font-medium px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700/60">
         Siap
@@ -29,9 +28,8 @@
   <!-- Main Container -->
   <main class="flex-1 max-w-3xl w-full mx-auto px-4 py-5 flex flex-col gap-5">
 
-    <!-- Mode Switcher & Room Input -->
+    <!-- Panel Pengaturan Awal -->
     <section id="setup-panel" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
-      <!-- Tabs -->
       <div class="grid grid-cols-2 gap-1.5 bg-zinc-950 p-1 rounded-xl border border-zinc-800/80">
         <button id="tab-camera" onclick="selectMode('camera')" class="py-2 text-sm font-medium rounded-lg transition bg-emerald-600 text-white shadow">
           HP Kamera (CCTV)
@@ -41,10 +39,9 @@
         </button>
       </div>
 
-      <!-- Room ID Input -->
       <div class="space-y-1.5">
         <label for="room-input" class="block text-xs font-medium text-zinc-400">
-          Kode Ruangan Rahasia (Samakan di kedua perangkat)
+          Kode Ruangan Rahasia (Samakan di HP Kamera & Monitor)
         </label>
         <div class="flex gap-2">
           <input
@@ -63,7 +60,6 @@
         </div>
       </div>
 
-      <!-- Quality Selector (Hanya tampil di Mode Kamera) -->
       <div id="camera-settings" class="pt-1 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400 border-t border-zinc-800/80">
         <span>Kualitas Stream (Hemat Baterai & Panas):</span>
         <select id="quality-select" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-200 focus:outline-none">
@@ -74,7 +70,7 @@
       </div>
     </section>
 
-    <!-- Video Viewport -->
+    <!-- Area Video & Kontrol -->
     <section id="viewport-section" class="hidden flex-col gap-3">
       <div class="relative bg-black rounded-2xl overflow-hidden border border-zinc-800 aspect-video flex items-center justify-center shadow-2xl">
         <video
@@ -85,65 +81,81 @@
           class="w-full h-full object-contain"
         ></video>
 
-        <!-- Overlay Info -->
-        <div class="absolute top-3 left-3 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+        <!-- Info Pojok Kiri Atas -->
+        <div class="absolute top-3 left-3 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 z-10">
           <span id="live-dot" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
           <span id="overlay-label" class="text-xs font-mono font-medium tracking-wider text-white">MENUNGGU...</span>
         </div>
 
-        <div id="viewer-count-badge" class="hidden absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs text-zinc-300">
+        <!-- Jumlah Monitor Terhubung -->
+        <div id="viewer-count-badge" class="hidden absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs text-zinc-300 z-10">
           0 Monitor Terhubung
         </div>
 
-        <!-- Placeholder Text saat Monitor belum terhubung -->
-        <div id="video-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-zinc-950/90">
-          <p id="placeholder-title" class="text-sm font-medium text-zinc-300">Menghubungkan ke kamera...</p>
-          <p id="placeholder-sub" class="text-xs text-zinc-500 mt-1">Pastikan Mode Kamera sudah aktif dengan kode ruangan yang sama.</p>
+        <!-- Placeholder Status Koneksi Monitor -->
+        <div id="video-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-zinc-950/95 z-20">
+          <div id="placeholder-spinner" class="w-7 h-7 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p id="placeholder-title" class="text-sm font-medium text-zinc-200">Menghubungi server signaling...</p>
+          <p id="placeholder-sub" class="text-xs text-zinc-400 mt-1 max-w-sm">Pastikan HP Kamera sudah aktif dengan kode ruangan yang sama.</p>
+          <button onclick="manualRetryMonitor()" class="mt-4 px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 border border-zinc-700 transition">
+            Coba Sambung Ulang
+          </button>
         </div>
       </div>
 
-      <!-- Controls Bar -->
+      <!-- Baris Tombol Kontrol -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
         <div class="flex flex-wrap items-center gap-2">
-          <!-- Tombol Senter / Torch -->
+          <!-- Senter -->
           <button id="btn-torch" onclick="handleTorch()" class="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
             <span>🔦</span> <span id="torch-label">Senter: Mati</span>
           </button>
 
-          <!-- Tombol Tukar Kamera -->
+          <!-- Tukar Kamera -->
           <button id="btn-switch" onclick="handleSwitchCam()" class="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
             <span>🔄</span> <span>Tukar Kamera</span>
           </button>
 
-          <!-- Tombol Audio -->
+          <!-- Audio -->
           <button id="btn-audio" onclick="handleAudio()" class="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
             <span>🔇</span> <span id="audio-label">Suara: Mati</span>
           </button>
 
-          <!-- Tombol Layar Hitam (Khusus Mode Kamera) -->
+          <!-- Layar Hitam (Khusus HP Kamera) -->
           <button id="btn-blackout" onclick="enableBlackout()" class="hidden px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-medium transition flex items-center gap-1.5">
             <span>🌙</span> <span>Layar Hitam</span>
           </button>
 
-          <!-- Tombol Fullscreen (Khusus Mode Monitor) -->
+          <!-- Fullscreen (Khusus Monitor) -->
           <button id="btn-fullscreen" onclick="toggleFullscreen()" class="hidden px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 transition flex items-center gap-1.5">
             <span>⛶</span> <span>Layar Penuh</span>
           </button>
         </div>
 
-        <!-- Tombol Stop -->
-        <button onclick="stopSession()" class="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 text-xs font-semibold transition">
-          Putuskan
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Matikan Aplikasi HP Jarak Jauh (Khusus Monitor) -->
+          <button
+            id="btn-remote-shutdown"
+            onclick="handleRemoteShutdown()"
+            class="hidden px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/35 text-rose-300 border border-rose-500/40 text-xs font-semibold transition flex items-center gap-1.5"
+          >
+            <span>🛑</span> <span id="shutdown-label">Matikan Aplikasi HP</span>
+          </button>
+
+          <!-- Putuskan Sesi Lokal -->
+          <button onclick="stopSession()" class="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 text-xs font-semibold transition">
+            Keluar
+          </button>
+        </div>
       </div>
     </section>
 
-    <!-- Error / Log Box -->
+    <!-- Kotak Notifikasi / Error -->
     <div id="alert-box" class="hidden rounded-xl bg-red-950/60 border border-red-800/70 px-4 py-3 text-xs text-red-200"></div>
 
   </main>
 
-  <!-- Blackout Power-Saver Overlay (Untuk layar OLED HP CCTV) -->
+  <!-- Layar Hitam Hemat Daya -->
   <div
     id="blackout-screen"
     ondblclick="disableBlackout()"
@@ -158,16 +170,21 @@
     const ICE_CONFIG = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' }
       ]
     };
 
-    let currentMode = 'camera'; // 'camera' | 'monitor'
+    let currentMode = 'camera';
+    let currentRoomCode = '';
     let peer = null;
     let localStream = null;
-    let activeCalls = [];
+    let activeCalls = new Map();
     let dataConnections = [];
     let monitorConn = null;
+    let retryTimer = null;
+    let isStreamPlaying = false;
 
     let currentFacingMode = 'environment';
     let isTorchOn = false;
@@ -175,18 +192,20 @@
     let wakeLock = null;
     let clockInterval = null;
 
-    // UI Elements
+    // State konfirmasi tombol shutdown jarak jauh
+    let shutdownConfirmPending = false;
+    let shutdownConfirmTimeout = null;
+
     const videoEl = document.getElementById('video-player');
     const statusBadge = document.getElementById('status-badge');
     const headerDot = document.getElementById('header-dot');
     const alertBox = document.getElementById('alert-box');
 
-    // Muat kode ruangan terakhir dari LocalStorage
     const savedRoom = localStorage.getItem('cctv_last_room');
     if (savedRoom) document.getElementById('room-input').value = savedRoom;
 
     function selectMode(mode) {
-      if (peer) return; // Kunci mode saat sesi berjalan
+      if (peer) return;
       currentMode = mode;
 
       const tabCam = document.getElementById('tab-camera');
@@ -218,6 +237,12 @@
       headerDot.className = `w-2.5 h-2.5 rounded-full ${colors[state] || colors.idle}`;
     }
 
+    function setPlaceholderText(title, sub, showSpinner = true) {
+      document.getElementById('placeholder-title').textContent = title;
+      if (sub) document.getElementById('placeholder-sub').textContent = sub;
+      document.getElementById('placeholder-spinner').style.display = showSpinner ? 'block' : 'none';
+    }
+
     function showError(msg) {
       alertBox.textContent = msg;
       alertBox.classList.remove('hidden');
@@ -239,6 +264,7 @@
         showError('Masukkan kode ruangan minimal 3 karakter (huruf/angka).');
         return;
       }
+      currentRoomCode = roomCode;
       localStorage.setItem('cctv_last_room', roomCode);
 
       document.getElementById('setup-panel').classList.add('hidden');
@@ -252,7 +278,7 @@
       }
     }
 
-    // ==================== MODE KAMERA (SENDER) ====================
+    // ==================== MODE KAMERA (HP CCTV) ====================
     async function initCameraMode(roomCode) {
       setStatus('Menyiapkan Kamera...', 'connecting');
       document.getElementById('btn-blackout').classList.remove('hidden');
@@ -260,13 +286,12 @@
       document.getElementById('video-placeholder').classList.add('hidden');
       document.getElementById('overlay-label').textContent = `KAMERA • ${roomCode}`;
 
-      // Minta layar tetap menyala
       requestWakeLock();
 
       try {
         await startLocalCameraStream();
       } catch (err) {
-        showError('Gagal mengakses kamera/mikrofon. Pastikan izin diberikan dan halaman dibuka melalui HTTPS.');
+        showError('Gagal mengakses kamera/mikrofon. Pastikan izin diberikan dan dibuka lewat HTTPS.');
         stopSession();
         return;
       }
@@ -274,46 +299,93 @@
       peer = new Peer(PEER_PREFIX + roomCode, { config: ICE_CONFIG });
 
       peer.on('open', () => {
-        setStatus('Kamera Aktif (Siap Dipantau)', 'live');
+        setStatus('Kamera Aktif', 'live');
+      });
+
+      peer.on('disconnected', () => {
+        if (peer && !peer.destroyed) peer.reconnect();
       });
 
       peer.on('connection', (conn) => {
+        dataConnections = dataConnections.filter(c => c.peer !== conn.peer);
         dataConnections.push(conn);
         updateViewerCount();
 
         conn.on('open', () => {
-          // Begitu monitor terhubung, langsung kirim stream video
-          const call = peer.call(conn.peer, localStream);
-          activeCalls.push(call);
-          sendStatusToMonitor(conn);
-
-          call.on('close', () => {
-            activeCalls = activeCalls.filter(c => c !== call);
-          });
+          callMonitor(conn);
         });
 
-        // Terima perintah jarak jauh dari Monitor
         conn.on('data', async (data) => {
-          if (data?.cmd === 'toggle-torch') {
+          if (data?.cmd === 'request-stream') {
+            callMonitor(conn);
+          } else if (data?.cmd === 'toggle-torch') {
             await toggleCameraTorch();
           } else if (data?.cmd === 'switch-cam') {
             await switchCameraFacing();
+          } else if (data?.cmd === 'shutdown-app') {
+            executeRemoteShutdown();
           }
         });
 
         conn.on('close', () => {
           dataConnections = dataConnections.filter(c => c !== conn);
+          const oldCall = activeCalls.get(conn.peer);
+          if (oldCall) {
+            oldCall.close();
+            activeCalls.delete(conn.peer);
+          }
           updateViewerCount();
         });
       });
 
       peer.on('error', (err) => {
         if (err.type === 'unavailable-id') {
-          showError('Kode ruangan ini sudah dipakai kamera lain. Gunakan kode lain.');
+          showError('Kode ruangan ini masih dipakai sesi lain. Tunggu 10 detik atau gunakan kode lain.');
         } else {
-          showError(`Koneksi terganggu: ${err.type}`);
+          showError(`Koneksi signaling: ${err.type}`);
         }
         setStatus('Error', 'error');
+      });
+    }
+
+    function executeRemoteShutdown() {
+      // Beri tahu semua Monitor bahwa aplikasi HP sedang dimatikan
+      dataConnections.forEach(conn => {
+        if (conn && conn.open) {
+          try { conn.send({ type: 'shutting-down' }); } catch (_) {}
+        }
+      });
+
+      // Hentikan kamera dan mikrofon seketika
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+
+      // Beri jeda 350ms agar sinyal balasan terkirim ke Monitor sebelum aplikasi ditutup
+      setTimeout(() => {
+        if (window.AndroidBridge && typeof window.AndroidBridge.shutdownApp === 'function') {
+          window.AndroidBridge.shutdownApp();
+        } else {
+          stopSession();
+          showError('Kamera telah dimatikan dari jarak jauh oleh Monitor.');
+        }
+      }, 350);
+    }
+
+    function callMonitor(conn) {
+      if (!localStream || !peer || peer.destroyed) return;
+      const existingCall = activeCalls.get(conn.peer);
+      if (existingCall) existingCall.close();
+
+      const call = peer.call(conn.peer, localStream);
+      activeCalls.set(conn.peer, call);
+      sendStatusToMonitor(conn);
+
+      call.on('close', () => {
+        if (activeCalls.get(conn.peer) === call) {
+          activeCalls.delete(conn.peer);
+        }
       });
     }
 
@@ -340,11 +412,10 @@
         audio: true
       });
 
-      // Default mikrofon mati sampai diaktifkan
       localStream.getAudioTracks().forEach(t => (t.enabled = isAudioActive));
-
       videoEl.srcObject = localStream;
-      videoEl.muted = true; // Selalu mute pratinjau lokal agar tidak feedback
+      videoEl.muted = true;
+      await videoEl.play().catch(() => {});
     }
 
     async function toggleCameraTorch() {
@@ -369,7 +440,6 @@
       isTorchOn = false;
       await startLocalCameraStream();
 
-      // Ganti video track di semua koneksi monitor tanpa memutus panggilan
       const newVideoTrack = localStream.getVideoTracks()[0];
       activeCalls.forEach(call => {
         const sender = call.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
@@ -398,52 +468,166 @@
 
     // ==================== MODE MONITOR (VIEWER) ====================
     function initMonitorMode(roomCode) {
-      setStatus('Mencari Kamera...', 'connecting');
+      isStreamPlaying = false;
+      setStatus('Menghubungi Server...', 'connecting');
+      setPlaceholderText('1/3 Menghubungi server koneksi...', 'Menyiapkan jalur komunikasi ke HP Kamera.', true);
       document.getElementById('btn-fullscreen').classList.remove('hidden');
+      document.getElementById('btn-remote-shutdown').classList.remove('hidden');
       document.getElementById('overlay-label').textContent = `MONITOR • ${roomCode}`;
 
       peer = new Peer({ config: ICE_CONFIG });
 
       peer.on('open', () => {
-        monitorConn = peer.connect(PEER_PREFIX + roomCode, { reliable: true });
-
-        monitorConn.on('open', () => {
-          setStatus('Terhubung • Menunggu Video', 'connecting');
-        });
-
-        monitorConn.on('data', (data) => {
-          if (data?.type === 'status') {
-            isTorchOn = data.torch;
-            updateControlLabels();
-          }
-        });
-
-        monitorConn.on('close', () => {
-          setStatus('Kamera Terputus', 'error');
-          document.getElementById('video-placeholder').classList.remove('hidden');
-          document.getElementById('placeholder-title').textContent = 'Koneksi ke HP Kamera terputus.';
-        });
+        connectToCamera(roomCode);
       });
 
-      // Terima stream video dari HP Kamera
       peer.on('call', (call) => {
+        setPlaceholderText('3/3 Menerima aliran video...', 'Menyinkronkan gambar dari kamera...', true);
         call.answer();
-        call.on('stream', (remoteStream) => {
+
+        if (call.peerConnection) {
+          call.peerConnection.oniceconnectionstatechange = () => {
+            const state = call.peerConnection.iceConnectionState;
+            if (state === 'failed' || state === 'disconnected') {
+              setPlaceholderText(
+                'Jalur video terblokir jaringan',
+                'Pastikan HP Kamera & Monitor memakai Wi-Fi yang sama.',
+                false
+              );
+            }
+          };
+        }
+
+        call.on('stream', async (remoteStream) => {
+          clearInterval(retryTimer);
+          isStreamPlaying = true;
           videoEl.srcObject = remoteStream;
+          videoEl.muted = true;
+          try {
+            await videoEl.play();
+          } catch (_) {}
           videoEl.muted = !isAudioActive;
+
           document.getElementById('video-placeholder').classList.add('hidden');
+          clearError();
           setStatus('LIVE', 'live');
         });
       });
 
       peer.on('error', (err) => {
         if (err.type === 'peer-unavailable') {
-          showError('HP Kamera belum aktif atau kode ruangan salah.');
+          setPlaceholderText(
+            'HP Kamera tidak aktif',
+            `Aplikasi CCTV di HP belum dijalankan atau sudah dimatikan (Kode: "${roomCode}").`,
+            false
+          );
+          setStatus('Kamera Offline', 'error');
         } else {
-          showError(`Gagal terhubung: ${err.type}`);
+          showError(`Gangguan koneksi: ${err.type}`);
+          setStatus('Gagal Terhubung', 'error');
         }
-        setStatus('Gagal Terhubung', 'error');
       });
+    }
+
+    function connectToCamera(roomCode) {
+      if (!peer || peer.destroyed) return;
+      clearInterval(retryTimer);
+
+      setPlaceholderText('2/3 Mencari HP Kamera...', `Mencocokkan kode ruangan "${roomCode}"...`, true);
+      monitorConn = peer.connect(PEER_PREFIX + roomCode, { reliable: true });
+
+      monitorConn.on('open', () => {
+        setStatus('Meminta Video...', 'connecting');
+        setPlaceholderText('2/3 Kamera ditemukan! Meminta video...', 'Menunggu kamera mengirim gambar...', true);
+        monitorConn.send({ cmd: 'request-stream' });
+
+        retryTimer = setInterval(() => {
+          if (!isStreamPlaying && monitorConn?.open) {
+            monitorConn.send({ cmd: 'request-stream' });
+          } else if (isStreamPlaying) {
+            clearInterval(retryTimer);
+          }
+        }, 4000);
+      });
+
+      monitorConn.on('data', (data) => {
+        if (data?.type === 'status') {
+          isTorchOn = data.torch;
+          updateControlLabels();
+        } else if (data?.type === 'shutting-down') {
+          isStreamPlaying = false;
+          clearInterval(retryTimer);
+          videoEl.srcObject = null;
+          setStatus('Aplikasi HP Dimatikan', 'idle');
+          document.getElementById('video-placeholder').classList.remove('hidden');
+          setPlaceholderText(
+            'Aplikasi CCTV di HP telah dimatikan',
+            'Layanan kamera latar belakang di HP sudah berhenti sepenuhnya.',
+            false
+          );
+        }
+      });
+
+      monitorConn.on('close', () => {
+        if (statusBadge.textContent === 'Aplikasi HP Dimatikan') return;
+        isStreamPlaying = false;
+        clearInterval(retryTimer);
+        setStatus('Kamera Terputus', 'error');
+        document.getElementById('video-placeholder').classList.remove('hidden');
+        setPlaceholderText('Koneksi ke HP Kamera terputus', 'Aplikasi CCTV di HP dimatikan atau kehilangan sinyal.', false);
+      });
+    }
+
+    function manualRetryMonitor() {
+      if (currentMode !== 'monitor' || !currentRoomCode) return;
+      clearError();
+      isStreamPlaying = false;
+      if (monitorConn) {
+        try { monitorConn.close(); } catch (_) {}
+      }
+      if (!peer || peer.destroyed) {
+        initMonitorMode(currentRoomCode);
+      } else {
+        if (peer.disconnected) peer.reconnect();
+        connectToCamera(currentRoomCode);
+      }
+    }
+
+    function handleRemoteShutdown() {
+      if (!monitorConn || !monitorConn.open) {
+        showError('HP Kamera belum terhubung, perintah tidak dapat dikirim.');
+        setTimeout(clearError, 3000);
+        return;
+      }
+
+      const labelEl = document.getElementById('shutdown-label');
+      const btnEl = document.getElementById('btn-remote-shutdown');
+
+      if (!shutdownConfirmPending) {
+        shutdownConfirmPending = true;
+        labelEl.textContent = 'Klik Lagi untuk Matikan!';
+        btnEl.className = 'px-3.5 py-2 rounded-xl bg-rose-600 text-white border border-rose-400 text-xs font-bold transition flex items-center gap-1.5 animate-pulse';
+
+        shutdownConfirmTimeout = setTimeout(() => {
+          resetShutdownButton();
+        }, 4000);
+      } else {
+        clearTimeout(shutdownConfirmTimeout);
+        monitorConn.send({ cmd: 'shutdown-app' });
+        labelEl.textContent = 'Mematikan HP...';
+        shutdownConfirmPending = false;
+        setTimeout(resetShutdownButton, 2000);
+      }
+    }
+
+    function resetShutdownButton() {
+      shutdownConfirmPending = false;
+      const labelEl = document.getElementById('shutdown-label');
+      const btnEl = document.getElementById('btn-remote-shutdown');
+      if (labelEl && btnEl) {
+        labelEl.textContent = 'Matikan Aplikasi HP';
+        btnEl.className = 'px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/35 text-rose-300 border border-rose-500/40 text-xs font-semibold transition flex items-center gap-1.5';
+      }
     }
 
     // ==================== KONTROL BERSAMA ====================
@@ -522,6 +706,11 @@
 
     function stopSession() {
       disableBlackout();
+      clearInterval(retryTimer);
+      clearTimeout(shutdownConfirmTimeout);
+      resetShutdownButton();
+      isStreamPlaying = false;
+
       if (wakeLock) {
         wakeLock.release().catch(() => {});
         wakeLock = null;
@@ -534,7 +723,7 @@
         peer.destroy();
         peer = null;
       }
-      activeCalls = [];
+      activeCalls.clear();
       dataConnections = [];
       monitorConn = null;
       isTorchOn = false;
@@ -547,6 +736,7 @@
       document.getElementById('setup-panel').classList.remove('hidden');
       document.getElementById('btn-blackout').classList.add('hidden');
       document.getElementById('btn-fullscreen').classList.add('hidden');
+      document.getElementById('btn-remote-shutdown').classList.add('hidden');
       document.getElementById('viewer-count-badge').classList.add('hidden');
       document.getElementById('video-placeholder').classList.remove('hidden');
       setStatus('Siap', 'idle');
